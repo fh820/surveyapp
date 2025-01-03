@@ -4,15 +4,14 @@ import com.surveyapp.model.Response;
 import com.surveyapp.model.User;
 import com.surveyapp.repository.UserRepository;
 import com.surveyapp.service.ResponseService;
+import com.surveyapp.utility.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-import com.surveyapp.utility.JwtUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -22,11 +21,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ResponseController {
 
-    @Autowired
     private final ResponseService responseService;
-    @Autowired
     private final JwtUtils jwtUtils;
-    @Autowired
     private final UserRepository userRepository;
 
     // Submit a response to a survey
@@ -71,5 +67,13 @@ public class ResponseController {
     @GetMapping("/survey/{surveyId}")
     public List<Response> getResponsesForSurvey(@PathVariable String surveyId) {
         return responseService.getResponsesForSurvey(surveyId);
+    }
+
+    // Start or resume a survey for a user (similar to the start/resume survey functionality)
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PostMapping("/start-or-resume/{userId}/{surveyId}")
+    public ResponseEntity<Response> startOrResumeSurvey(@PathVariable String userId, @PathVariable String surveyId) {
+        Response response = responseService.startOrResumeSurvey(userId, surveyId); // Corrected to use responseService
+        return ResponseEntity.ok(response);
     }
 }

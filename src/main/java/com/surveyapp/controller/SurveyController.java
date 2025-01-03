@@ -1,9 +1,11 @@
 package com.surveyapp.controller;
 
 import com.surveyapp.model.Survey;
+import com.surveyapp.service.ResponseService;
 import com.surveyapp.service.SurveyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +17,7 @@ import java.util.List;
 public class SurveyController {
 
     private final SurveyService surveyService;
+    private final ResponseService responseService;
 
     // Get all surveys (Accessible by Users and Admins)
     @GetMapping
@@ -66,5 +69,13 @@ public class SurveyController {
         }
 
         return surveyService.updateSurvey(surveyId, existingSurvey);
+    }
+
+    // Create a new version of a survey (Only Admins)
+    @PostMapping("/{surveyId}/new-version")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Survey> createNewVersion(@PathVariable String surveyId) {
+        Survey newVersion = responseService.createNewVersion(surveyId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newVersion);
     }
 }

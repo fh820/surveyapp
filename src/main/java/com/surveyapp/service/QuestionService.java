@@ -4,7 +4,6 @@ import com.surveyapp.model.Question;
 import com.surveyapp.model.Survey;
 import com.surveyapp.repository.SurveyRepository;
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,58 +17,63 @@ public class QuestionService {
 
     // Get all questions for a specific survey
     public List<Question> getQuestionsForSurvey(String surveyId) {
-        ObjectId objectId = new ObjectId(surveyId);
-        return surveyRepository.findById(objectId)
+        return surveyRepository.findById(surveyId)
                 .map(Survey::getQuestions)
-                .orElseThrow(() -> new RuntimeException("Survey not found"));
+                .orElseThrow(() -> new RuntimeException("Survey not found with ID: " + surveyId));
     }
 
     // Add a new question to a survey
     public Question addQuestionToSurvey(String surveyId, Question question) {
-        ObjectId objectId = new ObjectId(surveyId);
-        return surveyRepository.findById(objectId)
+        return surveyRepository.findById(surveyId)
                 .map(survey -> {
-                    question.setId(new ObjectId().toHexString()); // Generate unique ID for the question
+                    // Generate a unique string ID for the question
+                    question.setId(java.util.UUID.randomUUID().toString());
                     survey.getQuestions().add(question);
                     surveyRepository.save(survey);
                     return question;
                 })
-                .orElseThrow(() -> new RuntimeException("Survey not found"));
+                .orElseThrow(() -> new RuntimeException("Survey not found with ID: " + surveyId));
     }
 
     // Update a question in a survey
     public Question updateQuestionInSurvey(String surveyId, String questionId, Question updatedQuestion) {
-        ObjectId objectId = new ObjectId(surveyId);
-        return surveyRepository.findById(objectId)
+        return surveyRepository.findById(surveyId)
                 .map(survey -> {
                     Question question = survey.getQuestions().stream()
                             .filter(q -> q.getId().equals(questionId))
                             .findFirst()
-                            .orElseThrow(() -> new RuntimeException("Question not found"));
+                            .orElseThrow(() -> new RuntimeException("Question not found with ID: " + questionId + " in survey with ID: " + surveyId));
                     question.setText(updatedQuestion.getText());
                     question.setOptions(updatedQuestion.getOptions());
                     question.setMultipleChoice(updatedQuestion.isMultipleChoice());
                     surveyRepository.save(survey);
                     return question;
                 })
-                .orElseThrow(() -> new RuntimeException("Survey not found"));
+                .orElseThrow(() -> new RuntimeException("Survey not found with ID: " + surveyId));
     }
 
     // Delete a question from a survey
     public void deleteQuestionFromSurvey(String surveyId, String questionId) {
-        ObjectId objectId = new ObjectId(surveyId);
-        surveyRepository.findById(objectId).ifPresent(survey -> {
-            survey.getQuestions().removeIf(q -> q.getId().equals(questionId));
+        surveyRepository.findById(surveyId).ifPresentOrElse(survey -> {
+            boolean removed = survey.getQuestions().removeIf(q -> q.getId().equals(questionId));
+            if (!removed) {
+                throw new RuntimeException("Question not found with ID: " + questionId + " in survey with ID: " + surveyId);
+            }
             surveyRepository.save(survey);
+        }, () -> {
+            throw new RuntimeException("Survey not found with ID: " + surveyId);
         });
     }
 
     // Get a specific question by ID
     public Question getQuestionById(String surveyId, String questionId) {
-        Survey survey = surveyService.getSurveyById(surveyId); // Using SurveyService for fetching the survey
+        // Fetch the survey
+        Survey survey = surveyService.getSurveyById(surveyId);
+
+        // Find the question
         return survey.getQuestions().stream()
                 .filter(question -> question.getId().equals(questionId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Question not found"));
+                .orElseThrow(() -> new RuntimeException("Question not found with ID: " + questionId + " in survey with ID: " + surveyId));
     }
 }

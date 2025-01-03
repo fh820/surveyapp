@@ -14,11 +14,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class User {
 
     @Id
-    private ObjectId id;
+    private String id; // MongoDB ObjectId for user
 
-    private String username;
-
-    private String password;
-
-    private Role role;
+    private String username; // Username for the user
+    private String password; // User's password
+    private Role role; // Role of the user (e.g., Admin, Customer)
 }
